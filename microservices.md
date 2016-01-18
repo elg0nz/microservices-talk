@@ -4,9 +4,9 @@
 
 # Contents
 
-- InstaMike Pains :tired_face"...
+- InstaMike Pains :tired_face:...
 - Bounded Contexts :bento:
-- What are these :space_invader: things?
+- What are these Micro things :space_invader:?
 - :space_invader: Gotchas :stuck_out_tongue:
 - Must Win.
 
@@ -55,18 +55,20 @@ without having to rewrite their application.
 # What's a Rails monolith?
 ![](images/monolith.jpg)
 
-* An app that's so big and complex that it's slowing down the engineering
-  team
+* An app that's so big and complex that it's slowing down your team
 * It's a single point of failure
-* It has many rough edges that cause pain.
+* It's complexity makes simple tasks painful
 
 ^ There isn't a formal definition for a Rails monolith, but a good
-definition is an app that is slowing down the engineering team.
+definition is an app that is slowing down your team. It's also a single
+point of failure, and has a couple issues that cause pain to your team.
 
 ---
 
 ## :tired_face: Gem updates were painful
 ![](images/knot.jpg)
+^For InstaMike, one of those things that became more and more painful as
+the app grew was updating gems.
 
 ---
 
@@ -192,73 +194,196 @@ end
 ## :bento: -> :space_invader:
 ## Devise Context -> Auth-er
 
-* In a nutshell what does devise do? Setup a session cookie.
-* That's it.
-```ruby
-insert.code.for.session.setting.here
-```
+* Devise is the most used authentication gem in rails
+* It's an engine that allows your users to be logged in or out
 
 ---
 
 ## :bento: -> :space_invader:
 ## Devise Context -> Auth-er
 
-* Sessions can be shared across apps
-* Even on apps that aren't written on ruby
+* In a nutshell what does devise do? Setup a warden cookie
+* That's it
+* Your app is responsible for what to do with the "logged user"
 
 ```ruby
-insert.gorailsyourself.example.here
+  def sign_in(resource_or_scope, *args)
+    options  = args.extract_options!
+    [...]
+
+    expire_data_after_sign_in!
+
+    [...]
+    warden.session_serializer.store(resource, scope)
+  end
 ```
+^ So if we look at devise it's single task is to setup a cookie.
+
+---
+
+## :bento: -> :space_invader:
+## Devise Context -> Auth-er
+
+* Could you set that cookie on one Rails app and use it in another?
+* YES!
+
+The Auth-er app is now a simple devise app with just these three gems
+
+```ruby
+source 'https://rubygems.org'
+
+gem 'rails', '4.1.2'
+gem 'devise', '3.2.1'
+gem 'omniauth', '1.0.2'
+
+```
+
+^After realizing that, the InstaMike team created a separate app that
+has one simple goal: login the user and redirect it to the main
+application. This allowed it's team to work independently on the signup
+flow without having to touch the main app.
+
+---
+
+## :bento: -> :space_invader:
+## Devise Context -> Auth-er
+
+* And you can even use these sessions outside of rails
+* https://github.com/mattetti/goRailsYourself
+
+```ruby
+railsSecret := "f7b5763636f4c1f3ff4bd444eacccca295d87b990cc104124017ad70550edcfd22b8e89465338254e0b608592a9aac29025440bfd9ce53579835ba06a86f85f9"
+encryptedCookieSalt := []byte("encrypted cookie")
+encryptedSignedCookieSalt := []byte("signed encrypted cookie")
+
+kg := KeyGenerator{Secret: railsSecret}
+secret := kg.CacheGenerate(encryptedCookieSalt, 32)
+signSecret := kg.CacheGenerate(encryptedSignedCookieSalt, 64)
+e := MessageEncryptor{Key: secret, SignKey: signSecret}
+```
+^And after that the InstaMike team realized that if they can decode the
+session, then they can use that on apps written on other languages. For
+example go. This was a first solid step for splitting apart the
+monolith.
 
 ---
 
 ## :bento: -> :space_invader:
 # The Image Context
 
-* It uses http for communication
-* Yes there is GEMFORIMAGES
-* Using Imgix or Imgur api is faster
-* But there are so many open source implementations that you can just
-  pick one and go.
+On many social apps Images need to be:
+* Resized
+* Scaled
+* Cached
+* Uploaded
 
-```ruby
-insert.httpcalls.example.here
-```
-
----
-## :bento: -> :space_invader:
-# The Image Context -> Imag-er
-
-```ruby
-insert.httpcalls.example.here
-```
+^Images are a very clear bounded context that is usually required for
+social apps. But does the main app need to do all this work?
+No!
 
 ---
 
+## :bento: -> :space_invader: Imag-er
+
+Can be implemented with just 3 lines:
+
+```ruby
+$ gem install magickly
+$ gem install thin
+$ thin start
+
+```
+
+^After noticing this very clear pattern, InstaMike's team did some
+research and found Magickly. A gem that creates an app to resize images
+on the fly.
+
+---
+
+## http://imager.instamike.com/magic.png?saturation=150
+![left](images/normal.png)
+
+^ Using this app is very simple, you just do an http request to it,
+using parameters to specify what operation to do
+
+---
+
+## http://imager.instamike.com/magic.png?flip=true
+![left](images/flip.png)
+
+^Like flipping vertically
+
+---
+
+## http://imager.instamike.com/magic.png&flop=true
+![left](images/flop.png)
+
+^Or horizontally
+
+---
+
+
+## :bento: -> :space_invader: Image-er
+# Try it!
+* http://bit.ly/1nsp3vI
+* http://magickly.afeld.me/?src=http://i.imgur.com/fj5D8Nq.gif&flip=true
+
+* http://magickly.afeld.me/?src=http://i.imgur.com/fj5D8Nq.gif&two_color=true
+
+^You guys can even try it online if you like!
+
+---
+
 ## :bento: -> :space_invader:
-# ETL -> Bottle-er
+# ETL context -> Bottle-er
 
-And talking about cool stuff, what about I told you don't need to run a
-script every night to update your app reports?
+* Postgres has a log of events
+* Every time you do an operation it gets updated
+* It is used to replicate the database
+* So, instead of running a ruby script to generate reports every night,
+  could we just hook into it?
+* YES.
 
-Postgres internally has a Write Ahead Log, which is a stream of events
+
+^ InstaMike engineers got really excited with these contexts. So they
+started thinking outside the box and came with a good hack to extract
+reports.
+
+^Postgres internally has a Write Ahead Log, which is a stream of events
 that is used for replication.
 
-There is this really awesome project called Bottled Water that uses that
-feature to extract information from your database and trigger scripts to
-aggregate that data. Highly recommended
+^ What if we used that to extract data an push it into a report
+generation pipeline?
 
 ---
 
-## :bento: -> :space_invader:
-# ETL -> Bottle-er
+## :bento: -> :space_invader: Bottle-er
 
+![](images/bottled_water.png)
+
+^ That's what bottler does. It pushes postgres events into a kafka
+database. Then it creates the reports they want in almost real time. It
+uses the bottled water app internally.
+
+---
+
+## :bento: -> :space_invader: Bottle-er
+
+Integration is really simple:
 ```ruby
-insert.example.here
+$ docker run -d --name bottledwater --hostname bottledwater
+\ --link postgres:postgres
+\ --link kafka:kafka
+\ --link schema-registry:schema-registry
+confluent/bottledwater:0.1
 ```
 
+^ You just point this app to the postgres and kafka database, and done.
+All events get replicated
+
 ---
-# What are these things?
+
+# So what are these things?
 
 # :space_invader:
 
@@ -266,7 +391,7 @@ insert.example.here
 
 ---
 
-![original](images/two_weeks.png)
+![](images/two_weeks.png)
 ## These :space_invader: things are Microservices!
 
 ### Helper services (apps) you can rewrite from scratch in 2 weeks or less.
@@ -359,11 +484,20 @@ Check us out at
 * Ruby Rogues
 * https://speakerdeck.com/elg0nz/5-ways-we-screwed-up-microservices
 * Eric Evan's Domain Driven Design
+* CODE GENIUS - Magickly, Mustachio, & Stateless APIs by Aidan Feldman
+* https://github.com/confluentinc/bottledwater-pg
 
+`footer: mustwin.com
 ---
-* Mustwin.com
 
 ### Image Credits
 * https://flic.kr/p/ymPxN
 * https://flic.kr/p/62rNAB
 * https://flic.kr/p/t1um7
+
+`footer: mustwin.com
+---
+# Slides
+* https://github.com/elg0nz/microservices-talk
+
+`footer: mustwin.com
