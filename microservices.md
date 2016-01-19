@@ -12,30 +12,6 @@
 
 ---
 
-## Detailed Contents(REMOVE THIS SLIDE)
-
-- Mike Pains 😫...
-- Pains: Gem updates
-- Pains: Scaling
-- Pains: Deploying
-- Bounded Contexts
-  - Devise Context -> Auth-er ('Cookie' Service)
-  - Image Context -> Image-er 👾 (HTTP Service)
-  - Bottl-er (Postgres side ETLs)
-
----
-
-## Detailed Contents(REMOVE THIS SLIDE)
-
-- Introducing Microservices 👾
-- Microservices Flavors
-- Workers to Work-er-s 🤓
-
-- Caveats
-- Must Win
-
----
-
 #[fit] InstaMike 📷👨
 ![](images/true_story.jpg)
 
