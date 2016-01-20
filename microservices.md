@@ -2,6 +2,12 @@
 
 ---
 
+## Gonzalo Maldonado
+
+### Lead Engineer @ Must Win
+
+---
+
 # Contents
 
 - InstaMike Pains :tired_face:...
@@ -38,11 +44,13 @@ without having to rewrite their application.
 ^ There isn't a formal definition for a Rails monolith, but a good
 definition is an app that is slowing down your team. It's also a single
 point of failure, and has a couple issues that cause pain to your team.
+What kind of pain?
 
 ---
 
 ## :tired_face: Gem updates were painful
 ![](images/knot.jpg)
+
 ^For InstaMike, one of those things that became more and more painful as
 the app grew was updating gems.
 
@@ -175,12 +183,10 @@ end
 
 ---
 
-## :bento: -> :space_invader:
-## Devise Context -> Auth-er
+## Devise Context -> Auth-er :bento: -> :space_invader:
 
 * In a nutshell what does devise do? Setup a warden cookie
-* That's it
-* Your app is responsible for what to do with the "logged user"
+* That's it. Your app is responsible for what to do with the "logged user"
 
 ```ruby
   def sign_in(resource_or_scope, *args)
@@ -202,6 +208,14 @@ end
 
 * Could you set that cookie on one Rails app and use it in another?
 * YES!
+
+^ The InstaMike team then wondered, could we just set the cookie on one
+app and use it in another? The answer is yes.
+
+---
+
+## :bento: -> :space_invader:
+## Devise Context -> Auth-er
 
 The Auth-er app is now a simple devise app with just these three gems
 
@@ -244,8 +258,7 @@ monolith.
 
 ---
 
-## :bento: -> :space_invader:
-# The Image Context
+## :bento: -> :space_invader: The Image Context
 
 On many social apps Images need to be:
 * Resized
@@ -411,8 +424,8 @@ individually.
 
 ## To get them to be :space_invader::
 
-- Make them smaller. Their dependencies must also be able to be
-  rewriten in 2 weeks.- Enable them to scale individually (Some implementations already
+- Reduce the complexity of the models they depend on
+- Enable them to scale individually (Some implementations already
   allow you to do this).
 - Stop them loading the whole app inside them
 
@@ -420,7 +433,7 @@ individually.
 are apps that work outside the main web app and talk to each other via
 Redis, RabbitMQ or some other Pub-Sub Channel. And live outside the main
 webapp. Though, they are still not micro-services, to get there they
-need to be smaller with few dependencies, can scale individually and
+need to have ideally no dependencies, can scale individually and
 don't load the whole Rails app.
 
 ---
@@ -428,17 +441,17 @@ don't load the whole Rails app.
 
 There are many gotchas for getting Microservices right:
 
-* Distributed systems are hard. (Pick speed, consistency or availability)
-* Debugging across multiple services can be tricky
-* Creating development & production environments becomes harder
-* Beware of Microservice envy. Use them where they are needed.
+### Distributed systems are hard. (Pick speed, consistency or availability)
+### Debugging across multiple services can be tricky
+### Creating development & production environments becomes harder
+### Beware of Microservice envy. Use them only where needed.
 
 ---
 
 # Three quick tips before wrapping up:
 
 * RabbitMQ or any other messaging service makes it easier to keep state
-  consistent. HTTP loses messages very easily.
+  consistent. HTTP loses messages very easily. (http://queues.io/)
 * Try to minimize state as much as you can. Replication is very costly
 * Check the references (Specially Sam Newman's book)
 
@@ -446,7 +459,7 @@ There are many gotchas for getting Microservices right:
 
 # Must Win builds :heart: apps
 I'm Gonzalo Maldonado and I'm a lead engineer at Must Win.
-We build :heart: apps. (Sometimes with :space_invader: Microservices)
+We build :heart: apps. (With :space_invader: Microservices)
 
 Check us out at
 # MustWin.com
